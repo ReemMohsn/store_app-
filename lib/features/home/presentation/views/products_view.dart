@@ -1,8 +1,8 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:stor_app/features/home/presentation/view_model/auth_cubit.dart';
-import 'package:stor_app/features/home/presentation/view_model/auth_state.dart';
+import 'package:stor_app/core/constants/app_strings.dart';
+import 'package:stor_app/features/home/presentation/view_model/home_cubit.dart';
+import 'package:stor_app/features/home/presentation/view_model/home_state.dart';
 import 'package:stor_app/features/home/presentation/views/widgets/error_view.dart';
 import 'package:stor_app/features/home/presentation/views/widgets/product_card.dart';
 
@@ -11,46 +11,30 @@ class ProductsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => ProductsCubit(Dio())..getProducts(),
-      child: const _ProductsView(),
-    );
-  }
-}
-
-class _ProductsView extends StatelessWidget {
-  const _ProductsView();
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'المنتجات',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: false,
+        title: const Text(AppStrings.products),
         actions: [
           IconButton(
-            onPressed: () => context.read<ProductsCubit>().getProducts(),
+            onPressed: () => context.read<HomeCubit>().getProducts(),
             icon: const Icon(Icons.refresh),
           ),
         ],
       ),
-      body: BlocBuilder<ProductsCubit, ProductsState>(
+      body: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, state) {
-          if (state is ProductsLoading || state is ProductsInitial) {
+          if (state is HomeLoading || state is HomeInitial) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (state is ProductsFailure) {
+          if (state is HomeFailure) {
             return ErrorView(
               message: state.errorMessage,
-              onRetry: context.read<ProductsCubit>().getProducts,
+              onRetry: context.read<HomeCubit>().getProducts,
             );
           }
-          final products = (state as ProductsSuccess).products;
+          final products = (state as HomeSuccess).products;
           return RefreshIndicator(
-            onRefresh: context.read<ProductsCubit>().getProducts,
+            onRefresh: context.read<HomeCubit>().getProducts,
             child: GridView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(16),

@@ -1,11 +1,14 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:stor_app/core/constants/app_strings.dart';
+import 'package:stor_app/core/dependency_injection/injection_container.dart';
 import 'package:stor_app/core/routing/app_route.dart';
-import 'package:stor_app/features/auth/presentation/view_model/auth_cubit.dart';
-import 'package:stor_app/features/auth/presentation/views/login_view.dart';
+import 'package:stor_app/core/routing/navigator_key.dart';
+import 'package:stor_app/core/routing/routes.dart';
+import 'package:stor_app/core/themes/app_theme.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initDependencies();
   runApp(const StoreApp());
 }
 
@@ -14,48 +17,16 @@ class StoreApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Color(0xff2563eb);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'متجري',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: primaryColor),
-        scaffoldBackgroundColor: const Color(0xfff8fafc),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xffe2e8f0)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: primaryColor, width: 1.5),
-          ),
-        ),
-        cardTheme: CardThemeData(
-          color: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-      ),
+      title: AppStrings.appName,
+      theme: AppTheme.lightTheme,
       locale: const Locale('ar'),
-      navigatorKey: navigatorKey,
+      navigatorKey: NavigatorKey.navigatorKey,
       onGenerateRoute: AppRouter().generateRoute,
       initialRoute: AppRoute.login,
-      home: Directionality(
-        textDirection: TextDirection.rtl,
-        child: LoginView(),
-      ),
+      builder: (context, child) =>
+          Directionality(textDirection: TextDirection.rtl, child: child!),
     );
   }
 }
-
-// Backward-compatible app name for existing integrations.
-typedef MyApp = StoreApp;
