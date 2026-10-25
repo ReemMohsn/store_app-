@@ -1,17 +1,23 @@
-abstract class AuthState {}
+sealed class AuthState {
+  const AuthState();
+}
 
-class AuthInitial extends AuthState {}
+class AuthInitial extends AuthState {
+  const AuthInitial();
+}
 
-class LoginLoading extends AuthState {}
+class LoginLoading extends AuthState {
+  const LoginLoading();
+}
 
 class LoginSuccess extends AuthState {
-  LoginSuccess({required this.message});
+  const LoginSuccess({required this.message});
 
   final String message;
 }
 
 class LoginFailure extends AuthState {
-  LoginFailure({required this.errorMessage});
+  const LoginFailure({required this.errorMessage});
 
   final String errorMessage;
 }

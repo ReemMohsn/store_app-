@@ -1,3 +1,5 @@
+import 'package:stor_app/core/constants/app_strings.dart';
+
 class ProductModel {
   const ProductModel({
     required this.id,
@@ -13,11 +15,10 @@ class ProductModel {
   final String description;
   final String imageUrl;
 
-  factory ProductModel.fromJson(Object? source) {
-    final json = source as Map<String, dynamic>;
+  factory ProductModel.fromJson(Map<String, dynamic> json) {
     return ProductModel(
       id: '${json['id'] ?? ''}',
-      title: '${json['title'] ?? 'منتج'}',
+      title: '${json['title'] ?? AppStrings.product}',
       description: '${json['description'] ?? ''}',
       price: (json['price'] as num?)?.toDouble() ?? 0,
       imageUrl: '${json['thumbnail'] ?? json['imageUrl'] ?? ''}',

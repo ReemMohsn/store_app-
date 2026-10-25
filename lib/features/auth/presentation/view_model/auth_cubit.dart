@@ -1,26 +1,27 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:stor_app/core/constants/app_strings.dart';
+import 'package:stor_app/features/auth/data/repositories/auth_repository.dart';
 import 'package:stor_app/features/auth/presentation/view_model/auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
-  AuthCubit(this._dio) : super(AuthInitial());
-  final Dio _dio;
+  AuthCubit(this._repository) : super(const AuthInitial());
 
-  Future<void> signIn({required String email, required String password}) async {
-    emit(LoginLoading());
-    try {
-      final response = await _dio.post(
-        'https://dummyjson.com/auth/login',
-        data: {'username': email, 'password': password},
-        options: Options(headers: {'Content-Type': 'application/json'}),
-      );
-      if (response.statusCode == 200) {
-        emit(LoginSuccess(message: 'تم تسجيل الدخول بنجاح'));
-      } else {
-        emit(LoginFailure(errorMessage: 'بيانات الدخول غير صحيحة'));
-      }
-    } catch (_) {
-      emit(LoginFailure(errorMessage: 'تعذر تسجيل الدخول، تحقق من البيانات والاتصال'));
-    }
+  final AuthRepository _repository;
+
+  Future<void> signIn({
+    required String username,
+    required String password,
+  }) async {
+    emit(const LoginLoading());
+    final result = await _repository.signIn(
+      username: username,
+      password: password,
+    );
+    if (isClosed) return;
+
+    result.fold(
+      (failure) => emit(LoginFailure(errorMessage: failure.message)),
+      (_) => emit(const LoginSuccess(message: AppStrings.welcomeBack)),
+    );
   }
 }

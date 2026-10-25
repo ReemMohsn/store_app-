@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:stor_app/core/routing/app_route.dart';
+import 'package:stor_app/core/common/utils/app_validator.dart';
+import 'package:stor_app/core/constants/app_strings.dart';
+import 'package:stor_app/core/extensions/snack_bar_context_extension.dart';
+import 'package:stor_app/core/routing/routes.dart';
+import 'package:stor_app/core/themes/app_color.dart';
 import 'package:stor_app/features/auth/presentation/view_model/auth_cubit.dart';
 import 'package:stor_app/features/auth/presentation/view_model/auth_state.dart';
-import 'package:stor_app/features/home/presentation/views/products_view.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -16,7 +19,7 @@ class _LoginViewState extends State<LoginView> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController(text: 'emilys');
   final _passwordController = TextEditingController(text: 'emilyspass');
-  bool _obscurePassword = true;
+  final _obscurePassword = ValueNotifier<bool>(true);
 
   @override
   void dispose() {
@@ -28,126 +31,116 @@ class _LoginViewState extends State<LoginView> {
   void _submit() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     context.read<AuthCubit>().signIn(
-      email: _usernameController.text.trim(),
+      username: _usernameController.text.trim(),
       password: _passwordController.text,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<AuthCubit, AuthState>(
+    return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
-        if (state is LoginSuccess) {
-          Navigator.pushReplacementNamed(context, AppRoute.products);
-        }
-        if (state is LoginFailure) {
-          ScaffoldMessenger.of(
+        if (state is LoginLoading) {
+          context.showLoadingDialog();
+        } else if (state is LoginSuccess) {
+          Navigator.of(context, rootNavigator: true).pop();
+          context.showSuccessSnackBar(state.message);
+          Navigator.of(
             context,
-          ).showSnackBar(SnackBar(content: Text(state.errorMessage)));
+          ).pushNamedAndRemoveUntil(AppRoute.products, (route) => false);
+        } else if (state is LoginFailure) {
+          Navigator.of(context, rootNavigator: true).pop();
+          context.showErrorSnackBar(state.errorMessage);
         }
       },
-      builder: (context, state) {
-        final isLoading = state is LoginLoading;
-        return Scaffold(
-          body: SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 420),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Container(
-                          width: 76,
-                          height: 76,
-                          margin: const EdgeInsets.only(bottom: 24),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
-                            borderRadius: BorderRadius.circular(22),
-                          ),
-                          child: const Icon(
-                            Icons.storefront,
-                            color: Colors.white,
-                            size: 40,
-                          ),
+      child: Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Container(
+                        width: 76,
+                        height: 76,
+                        margin: const EdgeInsets.only(bottom: 24),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
+                          borderRadius: BorderRadius.circular(22),
                         ),
-                        Text(
-                          'مرحبًا بك',
-                          style: Theme.of(context).textTheme.headlineMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                        child: const Icon(
+                          Icons.storefront,
+                          color: AppColor.onPrimary,
+                          size: 40,
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'سجّل الدخول لتصفح أحدث المنتجات',
-                          style: Theme.of(context).textTheme.bodyLarge
-                              ?.copyWith(color: Colors.grey[600]),
+                      ),
+                      Text(
+                        AppStrings.loginTitle,
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        AppStrings.loginSubtitle,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: AppColor.textSecondary,
                         ),
-                        const SizedBox(height: 32),
-                        TextFormField(
-                          controller: _usernameController,
-                          textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: 'اسم المستخدم',
-                            prefixIcon: Icon(Icons.person_outline),
-                          ),
-                          validator: (value) =>
-                              value == null || value.trim().isEmpty
-                              ? 'أدخل اسم المستخدم'
-                              : null,
+                      ),
+                      const SizedBox(height: 32),
+                      TextFormField(
+                        controller: _usernameController,
+                        textInputAction: TextInputAction.next,
+                        decoration: const InputDecoration(
+                          labelText: AppStrings.labelUsername,
+                          prefixIcon: Icon(Icons.person_outline),
                         ),
-                        const SizedBox(height: 16),
-                        TextFormField(
+                        validator: AppValidator.signInUsername,
+                      ),
+                      const SizedBox(height: 16),
+                      ValueListenableBuilder<bool>(
+                        valueListenable: _obscurePassword,
+                        builder: (context, obscure, _) => TextFormField(
                           controller: _passwordController,
-                          obscureText: _obscurePassword,
+                          obscureText: obscure,
+                          textInputAction: TextInputAction.done,
+                          autofillHints: const [AutofillHints.password],
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          validator: AppValidator.requiredField,
                           onFieldSubmitted: (_) => _submit(),
                           decoration: InputDecoration(
-                            labelText: 'كلمة المرور',
-                            prefixIcon: const Icon(Icons.lock_outline),
+                            hintText: AppStrings.hintPassword,
                             suffixIcon: IconButton(
-                              onPressed: () => setState(
-                                () => _obscurePassword = !_obscurePassword,
-                              ),
+                              onPressed: () =>
+                                  _obscurePassword.value = !obscure,
                               icon: Icon(
-                                _obscurePassword
+                                obscure
                                     ? Icons.visibility_outlined
                                     : Icons.visibility_off_outlined,
+                                size: 20,
+                                color: AppColor.hint,
                               ),
                             ),
                           ),
-                          validator: (value) =>
-                              value == null || value.length < 4
-                              ? 'أدخل كلمة مرور صحيحة'
-                              : null,
                         ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          height: 52,
-                          child: FilledButton(
-                            onPressed: isLoading ? null : _submit,
-                            child: isLoading
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Text('تسجيل الدخول'),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 24),
+                      FilledButton(
+                        onPressed: _submit,
+                        child: const Text(AppStrings.signIn),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
